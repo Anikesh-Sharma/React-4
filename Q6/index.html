@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Template</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      #root {
+        width: 100%;
+        max-width: 800px;
+        padding: 20px;
+      }
+
+      .card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 15px;
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+
+      .card:hover {
+        transform: scale(1.05);
+      }
+
+      .card h1 {
+        font-size: 24px;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+  <script src="https://www.unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://www.unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+    const Greetingcard = ({ greetings, name }) => {
+      return (
+        <div className="card">
+          <h1>
+            {greetings} {name}
+          </h1>
+        </div>
+      );
+    };
+
+    const App = () => {
+      const cards = [
+        { greeting: "Happy Birthday", name: "John Doe" },
+        { greeting: "Congratulations", name: "Jane Smith" },
+        { greeting: "Happy Holidays", name: "Alice Brown" },
+        { greeting: "Best Wishes", name: "Charlie Black" },
+      ];
+      return (
+        <div>
+          {cards.map((ele) => (
+            <Greetingcard greetings={ele.greeting} name={ele.name} />
+          ))}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</html>

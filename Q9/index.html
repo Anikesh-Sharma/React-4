@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Manager</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      #root {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 600px;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      form div {
+        display: flex;
+        flex-direction: column;
+      }
+
+      label {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      input[type="text"],
+      select {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+      }
+
+      button {
+        padding: 10px 15px;
+        font-size: 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      button[type="submit"] {
+        background-color: #28a745;
+        color: white;
+      }
+
+      button:hover {
+        background-color: #218838;
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      .task-container {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .task-actions button {
+        background-color: #007bff;
+        color: white;
+        margin-right: 5px;
+      }
+
+      .task-actions button:hover {
+        background-color: #0056b3;
+      }
+
+      .task-actions button:last-child {
+        background-color: #dc3545;
+      }
+
+      .task-actions button:last-child:hover {
+        background-color: #c82333;
+      }
+
+      .filter-actions {
+        margin-top: 10px;
+      }
+
+      .filter-actions label {
+        margin-right: 10px;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin: 0;
+        color: #333;
+      }
+
+      p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+  <script src="https://www.unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://www.unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script type="text/babel">
+    function App() {
+      const url = "https://crud-3a09e-default-rtdb.firebaseio.com/"
+      const [title, settitle] = React.useState('');
+      const [iscomplete, setiscomplete] = React.useState(false);
+      const [assign, setassign] = React.useState('radha');
+      const [tasks, settasks] = React.useState([]);
+      const [filterAssignee, setfilterAssignee] = React.useState('');
+      console.log(tasks);
+
+      // Add New Task
+      function handlesubmit(e) {
+        e.preventDefault();
+        console.log(title, iscomplete, assign);
+        axios.post(`${url}/todo.json`, { title, isCompleted: iscomplete, assignee: assign })
+          .then(() => {
+            console.log("Task added successfully");
+            settitle('');
+            setiscomplete(false);
+            setassign('radha');
+            gettasks(); // Refresh task list after adding
+          })
+          .catch(err => {
+            console.log("Failed to add task", err);
+          });
+      }
+
+      // Get All Tasks
+      function gettasks() {
+        axios.get(`${url}/todo.json`)
+          .then(response => {
+            settasks(Object.entries(response.data).map(val =>{
+              return {id:val[0], ...val[1]}
+            }));
+            
+          })
+          .catch(err => {
+            console.log("Error fetching tasks", err);
+          });
+      }
+
+      // Update Task
+      function handleupdate(id) {
+        const updatedTitle = prompt("Update Task Title:");
+        const updatedAssign = prompt("Update Assignee (radha, suku, khushi):");
+        const updatedIsComplete = confirm("Is the task completed?");
+
+        axios.put(`${url}todo/${id}.json`, {
+          title: updatedTitle || title,
+          assignee: updatedAssign || assign,
+          isCompleted: updatedIsComplete
+        })
+          .then(() => {
+            console.log("Task updated successfully");
+            gettasks(); // Refresh tasks after update
+          })
+          .catch(err => {
+            console.log("Failed to update task", err);
+          });
+      }
+
+      // Delete Task
+      function handledelete(id) {
+        axios.delete(`${url}todo/${id}.json`)
+          .then((val) => {
+            console.log("Task deleted successfully");
+            console.log(val);
+            
+            gettasks(); // Refresh tasks after delete
+          })
+          .catch(err => {
+            console.log("Failed to delete task", err);
+          });
+      }
+
+      // Show Incomplete Tasks
+      function showincompletetasks() {
+        const incompleteTasks = tasks.filter(task => !task.isCompleted);
+        settasks(incompleteTasks);
+      }
+
+      // Filter Tasks by Assignee
+      function filtertasksbyassignee() {
+        const filteredTasks = tasks.filter(task => task.assignee === filterAssignee);
+        settasks(filteredTasks);
+      }
+
+      return (
+        <>
+          <form onSubmit={handlesubmit}>
+            <div>
+              <label>Title</label>
+              <input
+                type="text"
+                placeholder="Task title"
+                value={title}
+                onChange={(e) => settitle(e.target.value)}
+              />
+            </div>
+            <div>
+              <label>Completed</label>
+              <input
+                type="checkbox"
+                checked={iscomplete}
+                onChange={() => setiscomplete(!iscomplete)}
+              />
+            </div>
+            <div>
+              <label>Assignee</label>
+              <select
+                onChange={(e) => setassign(e.target.value)}
+                value={assign}
+              >
+                <option value="radha">radha</option>
+                <option value="suku">suku</option>
+                <option value="khushi">khushi</option>
+              </select>
+            </div>
+            <button type="submit">Add Task</button>
+          </form>
+
+          <button onClick={gettasks}>Get All Tasks</button>
+          <button onClick={showincompletetasks}>Show Incomplete Tasks</button>
+
+          <div className="filter-actions">
+            <label>Filter by Assignee</label>
+            <select
+              onChange={(e) => setfilterAssignee(e.target.value)}
+              value={filterAssignee}
+            >
+              <option value="">Select Assignee</option>
+              <option value="radha">radha</option>
+              <option value="suku">suku</option>
+              <option value="khushi">khushi</option>
+            </select>
+            <button onClick={filtertasksbyassignee}>Filter Tasks</button>
+          </div>
+
+          {tasks.map(task => (
+            <div className="task-container" key={task.id}>
+              <div>
+                <h1>{task.title}</h1>
+                <p>{task.isCompleted ? "Completed" : "Incomplete"}</p>
+                <p>{task.assignee}</p>
+              </div>
+              <div className="task-actions">
+                <button onClick={() => handleupdate(task.id)}>Update</button>
+                <button onClick={() => handledelete(task.id)}>Delete</button>
+              </div>
+            </div>
+          ))}
+        </>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+  </script>
+</html>

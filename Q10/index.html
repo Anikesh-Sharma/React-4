@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather App</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+      #root {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        width: 100%;
+      }
+      input, button, select {
+        padding: 10px;
+        font-size: 16px;
+        margin-bottom: 10px;
+      }
+      .weather-info {
+        margin-top: 20px;
+      }
+      .forecast {
+        display: flex;
+        justify-content: space-between;
+      }
+      .forecast-day {
+        text-align: center;
+        margin: 10px;
+      }
+      .favorites {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script src="https://www.unpkg.com/react@18.2.0/umd/react.development.js"></script>
+    <script src="https://www.unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script type="text/babel">
+      const API_KEY = 'bd5e378503939ddaee76f12ad7a97608'; // Insert your API key here
+
+      function App() {
+        const [city, setCity] = React.useState('');
+        const [weatherData, setWeatherData] = React.useState(null);
+        const [forecastData, setForecastData] = React.useState([]);
+        const [favorites, setFavorites] = React.useState([]);
+        const [alerts, setAlerts] = React.useState([]);
+        const [geolocationWeather, setGeolocationWeather] = React.useState(null);
+
+        // Fetch current weather data by city
+        function fetchWeather(cityName) {
+          axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric`)
+            .then(response => {
+              setWeatherData(response.data);
+              fetchForecast(cityName);
+              checkAlerts(response.data.coord.lat, response.data.coord.lon);
+            })
+            .catch(error => console.error('Error fetching weather data:', error));
+        }
+
+        // Fetch 5-day forecast
+        function fetchForecast(cityName) {
+          axios.get(`https://api.openweathermap.org/data/2.5/forecast?q=${cityName}&appid=${API_KEY}&units=metric`)
+            .then(response => {
+              setForecastData(response.data.list.slice(0, 5)); // Get 5 entries for the 5-day forecast
+            })
+            .catch(error => console.error('Error fetching forecast data:', error));
+        }
+
+        // Fetch weather alerts (if any) for a location
+        function checkAlerts(lat, lon) {
+          axios.get(`https://api.openweathermap.org/data/2.5/onecall?lat=${lat}&lon=${lon}&appid=${API_KEY}`)
+            .then(response => {
+              if (response.data.alerts) {
+                setAlerts(response.data.alerts);
+              } else {
+                setAlerts([]);
+              }
+            })
+            .catch(error => console.error('Error fetching weather alerts:', error));
+        }
+
+        // Handle search submission
+        function handleSearch(e) {
+          e.preventDefault();
+          if (city) fetchWeather(city);
+        }
+
+        // Handle adding a city to favorites
+        function addToFavorites(city) {
+          if (!favorites.includes(city)) {
+            setFavorites([...favorites, city]);
+          }
+        }
+
+        // Handle removing a city from favorites
+        function removeFromFavorites(cityToRemove) {
+          setFavorites(favorites.filter(city => city !== cityToRemove));
+        }
+
+        // Fetch weather for geolocation
+        function fetchGeolocationWeather(lat, lon) {
+          axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`)
+            .then(response => {
+              setGeolocationWeather(response.data);
+            })
+            .catch(error => console.error('Error fetching geolocation weather data:', error));
+        }
+
+        // Get user geolocation
+        function getUserLocation() {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                fetchGeolocationWeather(position.coords.latitude, position.coords.longitude);
+              },
+              (error) => {
+                console.error('Geolocation error:', error);
+              }
+            );
+          } else {
+            console.error('Geolocation not supported by this browser.');
+          }
+        }
+
+        React.useEffect(() => {
+          getUserLocation();
+        }, []);
+
+        return (
+          <div>
+            <h1>Weather App</h1>
+
+            <form onSubmit={handleSearch}>
+              <input
+                type="text"
+                placeholder="Enter city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+              <button type="submit">Search</button>
+            </form>
+
+            {weatherData && (
+              <div className="weather-info">
+                <h2>{weatherData.name}</h2>
+                <p>Temperature: {weatherData.main.temp} °C</p>
+                <p>Humidity: {weatherData.main.humidity} %</p>
+                <p>Wind Speed: {weatherData.wind.speed} m/s</p>
+                <p>{weatherData.weather[0].description}</p>
+                <button onClick={() => addToFavorites(weatherData.name)}>Add to Favorites</button>
+              </div>
+            )}
+
+            {forecastData.length > 0 && (
+              <div className="forecast">
+                {forecastData.map((forecast, index) => (
+                  <div key={index} className="forecast-day">
+                    <h3>Day {index + 1}</h3>
+                    <p>Temp: {forecast.main.temp} °C</p>
+                    <p>{forecast.weather[0].description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {alerts.length > 0 && (
+              <div className="alerts">
+                <h3>Weather Alerts:</h3>
+                {alerts.map((alert, index) => (
+                  <p key={index}>{alert.description}</p>
+                ))}
+              </div>
+            )}
+
+            <div className="favorites">
+              <h3>Favorites</h3>
+              {favorites.length > 0 ? (
+                favorites.map((favCity, index) => (
+                  <div key={index}>
+                    <p>{favCity}</p>
+                    <button onClick={() => removeFromFavorites(favCity)}>Remove</button>
+                  </div>
+                ))
+              ) : (
+                <p>No favorite cities added yet.</p>
+              )}
+            </div>
+
+            {geolocationWeather && (
+              <div className="weather-info">
+                <h2>Your Location: {geolocationWeather.name}</h2>
+                <p>Temperature: {geolocationWeather.main.temp} °C</p>
+                <p>Humidity: {geolocationWeather.main.humidity} %</p>
+                <p>Wind Speed: {geolocationWeather.wind.speed} m/s</p>
+                <p>{geolocationWeather.weather[0].description}</p>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+  </body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ToDo App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #root {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            width: 350px;
+        }
+
+        form {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .todo-item p {
+            flex-grow: 1;
+            margin: 0;
+            padding-right: 10px;
+        }
+
+        .todo-item.completed p {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .todo-item button {
+            background-color: #dc3545;
+        }
+
+        .todo-item button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+</body>
+<script src="https://www.unpkg.com/react@18.2.0/umd/react.development.js"></script>
+<script src="https://www.unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+    function App() {
+        const [curval, setcurval] = React.useState("");
+        const [todoarr, settodoarr] = React.useState([]);
+
+        function handleclick(e) {
+            e.preventDefault();
+            if (curval.trim() === "") return; // Prevent adding empty items
+
+            settodoarr([...todoarr, { curval: curval, completed: false }]);
+            setcurval(""); // Clear the input field after submission
+        }
+
+        function handlecheck(i) {
+            settodoarr(todoarr.map((todoobj, index) => {
+                return i === index ? { ...todoobj, completed: !todoobj.completed } : todoobj;
+            }));
+        }
+
+        function handledelete(i) {
+            settodoarr(todoarr.filter((_, index) => i !== index));
+        }
+
+        return (
+            <>
+                <form>
+                    <input
+                        type="text"
+                        placeholder="Write a task"
+                        value={curval}
+                        onChange={(e) => setcurval(e.target.value)}
+                        autoFocus
+                    />
+                    <button onClick={handleclick}>Add</button>
+                </form>
+                {
+                    todoarr.map((todoobj, i) => {
+                        return (
+                            <div key={i} className={`todo-item ${todoobj.completed ? "completed" : ""}`}>
+                                <p>{todoobj.curval}</p>
+                                <input
+                                    type="checkbox"
+                                    checked={todoobj.completed}
+                                    onChange={() => handlecheck(i)}
+                                />
+                                <button onClick={() => handledelete(i)}>Delete</button>
+                            </div>
+                        );
+                    })
+                }
+            </>
+        );
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"));
+</script>
+
+</html>
